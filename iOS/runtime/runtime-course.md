@@ -157,9 +157,47 @@ meta-class之所以重要，是因为它存储着一个类的所有类方法。�
 | class_replaceMethod | 替代方法实现 |
 | class_getMethodImplementation | 返回方法的具体实现 |
 | class_getMethodImplementation_stret | 返回方法的具体实现 |
-| class_respondsToSelector | 类实例是否相应方法 |
+| class_respondsToSelector | 类实例是否响应指定的方法 |
 
+* class_getInstanceMethod、class_getClassMethod函数，与class_copyMethodList不同的是，这两个函数都会去搜索父类的实现。
+* class_copyMethodList函数，返回包含所有实例方法的数组，如果需要获取类方法，则可以使用class_copyMethodList(object_getClass(cls), &count)(一个类的实例方法是定义在元类里面)。该列表不包含父类实现的方法。outCount参数返回方法的个数。在获取到列表后，我们需要使用free()方法来释放它。
+* class_replaceMethod函数，该函数的行为可以分为两种：如果类中不存在name指定的方法，则类似于class_addMethod函数一样会添加方法；如果类中已存在name指定的方法，则类似于method_setImplementation一样替代原方法的实现。
+* class_respondsToSelector函数，我们通常使用NSObject类的respondsToSelector:或instancesRespondToSelector:方法来达到相同目的。
 
+**示例**
+
+```
+- (void)objectMethod
+{
+    unsigned int methodCount = 0;
+    Method *list1 = class_copyMethodList([self class], &methodCount);
+    NSLog(@"list1 has %d methods",methodCount);
+    for (int i = 0; i<methodCount; i++) {
+        NSLog(@"Method n.o #%d: %s", i, sel_getName(method_getName(list1[i])));
+    }
+    
+    Method *list2 = class_copyMethodList(object_getClass([self class]), &methodCount);
+    NSLog(@"list2 has %d methods",methodCount);
+    for (int i = 0; i<methodCount; i++) {
+        NSLog(@"Method n.o #%d: %s", i, sel_getName(method_getName(list2[i])));
+    }
+}
+
++ (void)classMethod
+{
+    
+}
+```
+
+>2015-06-18 10:26:22.228 RuntimeCourse[1103:453515] list1 has 2 method
+
+>2015-06-18 10:26:22.228 RuntimeCourse[1103:453515] Method n.o #0: chapterOne
+
+>2015-06-18 10:26:22.228 RuntimeCourse[1103:453515] Method n.o #1: objectMethod
+
+>2015-06-18 10:26:22.228 RuntimeCourse[1103:453515] list2 has 1 methods
+
+>2015-06-18 10:26:22.228 RuntimeCourse[1103:453515] Method n.o #0: classMethod
 
 
 
